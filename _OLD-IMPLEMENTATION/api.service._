@@ -1,0 +1,108 @@
+//import localStorage from "@react-native-async-storage/async-storage";
+
+const baseUrl = "https://chaveiroapp-server.herokuapp.com/principal";
+const dbKey = "chaveiroapp:database";
+const dbTimekey = "chaveiroapp:date";
+
+interface remoteData {
+  id?: number;
+  description?: string;
+  gold: string;
+  jas?: string;
+  dovale?: string;
+  silca?: string;
+  jsa?: string;
+  land?: string;
+}
+
+export const fetchAllData = async () => {
+  let data = await localStorage.getItem(dbKey);
+  let time = (await localStorage.getItem(dbTimekey)) || "";
+
+  if (!data || updateNeeded(time)) {
+    console.log("Making request");
+    const response = await fetch(baseUrl);
+    const data = await response.json();
+    console.log("saving data post request");
+    await savelocalStorage(data);
+  }
+  return data;
+};
+
+const updateNeeded = (time: string) => {
+  const date1 = JSON.parse(time);
+  const date2 = Date.now();
+  const diffTime = Math.abs(date2 - date1);
+  console.log(diffTime / 60 + " seconds");
+  return diffTime > 3600000;
+};
+
+const savelocalStorage = async (data) => {
+  if (!(await localStorage.getItem(dbKey))) {
+    localStorage.removeItem(dbKey);
+    localStorage.removeItem(dbTimekey);
+  }
+  localStorage.setItem(dbKey, JSON.stringify(data));
+  localStorage.setItem(dbTimekey, JSON.stringify(Date.now().toString()));
+  console.log("Data base updated");
+};
+
+export const getDataFromId = async (id: string, company: string) => {
+  const data = (await localStorage.getItem(dbKey)) || "";
+  const time = (await localStorage.getItem(dbTimekey)) || "";
+
+  if (
+    data === "" ||
+    data === null ||
+    data === "undefined" ||
+    updateNeeded(time)
+  ) {
+    await fetchAllData();
+    return await getDataFromId(id, company);
+  }
+
+  const db: [] = JSON.parse(data);
+  const results = db.find((data) => data[company] === id.trim());
+  return results;
+};
+
+export const getCompanies = () => {
+  return [
+    {
+      id: "",
+      company: "dovale",
+      name: "DOVALE",
+      image: require("../../assets/companies/DOVALE.png"),
+    },
+    {
+      id: "",
+      company: "gold",
+      name: "GOLD",
+      image: require("../../assets/companies/GOLD.png"),
+    },
+    {
+      id: "",
+      company: "jas",
+      name: "JAS",
+      image: require("../../assets/companies/JAS.png"),
+    },
+    {
+      id: "",
+      company: "jsa",
+      name: "JSA",
+      image: require("../../assets/companies/JSA.png"),
+    },
+    {
+      id: "",
+      company: "land",
+      name: "LAND",
+      image: require("../../assets/companies/LAND.png"),
+    },
+    {
+      id: "",
+      company: "silca",
+      name: "SILCA",
+      image: require("../../assets/companies/SILCA.png"),
+    },
+  ];
+};
